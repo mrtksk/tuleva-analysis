@@ -26,7 +26,7 @@ library(tidyquant)
 
 Tidyquant kasutab Yahoo Finance'i andmeid, mis on tasuta kättesaadavad. Enamik indekseid ei ole, küll aga on piisav valik ETF-e. See ongi ausam - nii on meie võrldusindeks tegelikult kättesaadav etalon. Piisavalt suurele investorile nagu pensionifond peaks ETFi ostmine ja hoidmine olema sisuliselt 0 kuluga.
 
-Minu võrldusindeks koosneb kolmest iShares ETF-ist: "ACWI"" jäljendab nagu maailma aktsiaturu indeksit MSCI ACWI, "IGOV" jäljendab maailma valitsuste võlakirju v.a. USA omi ja "AGG" jäljendab USA kogu võlakirjaturgu. Need kaks võlakirja ETF-i katavad ära ligi 80% investeerimisjärgu võlakirjadest maailmas.
+Minu võrldusindeks koosneb kolmest iShares ETF-ist: "ACWI" jäljendab maailma aktsiaturu indeksit MSCI ACWI, "IGOV" jäljendab maailma valitsuste võlakirju v.a. USA omi ja "AGG" jäljendab kogu USA investeerimisjärgu võlakirjaturgu. Need kaks võlakirja ETF-i katavad ära ligi 80% investeerimisjärgu võlakirjadest maailmas.
 
 Ja alguse kuupäevaks võtan 2009 aasta teise poolaasta, kui tekkis võimalus agressiivse strateegiaga fonde luua. 01.07.2009 alustasid tegevust ka Nordea (Luminori) fondid, seega on meil võimalus võrrelda kõigi Eestis kuni Tuleva tulekuni tegutsenud ja täna siiani tegutsevate pensionifondidega.
 
@@ -67,10 +67,10 @@ Portfolio.returns$date = as.yearmon(Portfolio.returns$date)
 
 Maailmaturu võrdlusindeksi keskmine aastatootlus on analüüsiperioodil olnud `r format((Return.annualized(Portfolio.returns$portfolio.returns, scale = 12)*100), digits =2)` protsenti.
 
-Eesti andmeid Tidyverse'i abil kätte ei saa, kasutame otse csv faili allalaadimist. 
+Eesti andmeid Tidyquanti'i abil kätte ei saa, kasutame otse csv faili allalaadimist. 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-
+#kuigi tahtsin püsida Tidyverse'i maailmas, toimib read.csv EVK andmete puhul paremini
 EPI = read.csv2("http://www.pensionikeskus.ee/statistika/ii-sammas/epi-graafikud/?date_from=01.07.2009&date_to=01.10.2017&download=xls", fileEncoding = "UTF-16LE", sep = "\t")
 EPI$Kuupäev = dmy(EPI$Kuupäev)
 EPI = spread(EPI, key = Indeks, value=Väärtus)
@@ -188,10 +188,10 @@ SWK50 = Return.annualized(fondide.tootlused$SWK50, scale = 12)*100
 ```
 
 Analüüsiperioodil on keskmine aastatootlus meie progressiivsetes pensionifondides olnud järgmine:  
-* Swedbank `r format(SWK50, digits = 2)` protsenti  
-* Nordea `r format(NPK50, digits =2)` protsenti  
-* LHV `r format(LLK50, digits =2)` protsenti  
-* SEB `r format(SEK50, digits =2)` protsenti
+* Swedbank K3-s `r format(SWK50, digits = 2)` protsenti  
+* Nordea A-ss`r format(NPK50, digits =2)` protsenti  
+* LHV L-is`r format(LLK50, digits =2)` protsenti  
+* SEB Progressiivses `r format(SEK50, digits =2)` protsenti
 
 Ja paneme nüüd pensioniraha kõik sinna sisse ka
 
@@ -220,10 +220,10 @@ d = format(tail(fondide.portfell$Swedbank, 1)/1000000000, digits = 3)
 ```
 
 Ühesõnaga, kui võrdlusportfellis kasvas raha 7 aastaga `r format(tail(Portfolio.value$uus,1)/1000000000, digits = 2)` miljardi euroni siis Kui kogu meie pensionifondide raha oleks investeeritud...  
-* LHVss, oleks selle väärtus kasvanud `r a` miljardi euroni  
-* Nordeasse, oleks selle väärtus kasvanud `r b` miljardi euroni  
-* SEBsse, oleks selle väärtus kasvanud `r c` miljardi euroni  
-* Swedbanki, oleks selle väärtus kasvanud `r d` miljardi euroni
+* LHV L-s, oleks selle väärtus kasvanud `r a` miljardi euroni  
+* Nordea A-sse, oleks selle väärtus kasvanud `r b` miljardi euroni  
+* SEB Progressiivsesse, oleks selle väärtus kasvanud `r c` miljardi euroni  
+* Swedbank K3-e, oleks selle väärtus kasvanud `r d` miljardi euroni
 
 Üks kokkuvõttev graafika ka  
 
