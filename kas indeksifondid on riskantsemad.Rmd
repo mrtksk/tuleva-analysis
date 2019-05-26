@@ -206,24 +206,6 @@ nav3.kuised.tootlused %>%
 
 
 
-Tegin mingil põhjusel graafiku pensionifondide indeksi EPI jaoks ka. Võibolla on vaja..
-
-```{r echo=FALSE, fig.height=2.3, fig.width=4}
-url2 = paste("https://www.pensionikeskus.ee/statistika/ii-sammas/epi-graafikud/?date_from=", algkuup, "&date_to=", loppkuup,"&download=xls", sep="")
-
-EPI.indeks = read.csv2(url2, fileEncoding ="UTF-16", header = TRUE, sep = "\t") %>%
-  filter(Indeks=="EPI") %>%
-    mutate(Kuupäev=dmy(Kuupäev))
-
-EPI.indeks %>%
-    ggplot(aes(x = Kuupäev, y = Väärtus)) +
-    geom_line(size = 1, colour="red") +
-  labs(title = "EPI Indeksi muutus",
-         x = "", y = "Indeksi väärtus") +
-       scale_y_continuous(labels = scales::dollar) +
-    theme_tq() + 
-    scale_color_tq()
-```
 
 Siia lõppu võiks veel ühele graafikule kõik kokku panna.
 
