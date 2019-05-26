@@ -1,0 +1,229 @@
+---
+title: "Kas indeksifondid on riskantsemad kui tavalised?"
+author: "Tõnu Pekk"
+date: "5/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+dude, tee nüüd githubi integratsioon ka kärmelt ära https://resources.github.com/whitepapers/github-and-rstudio/
+
+```{r eeldused, include=FALSE}
+library(tidyquant)
+library(ggplot2)
+```
+
+Tõmbame indeksifondide viimase kahe aasta andmed pensionikeskusest.
+
+```{r echo=TRUE}
+algkuup <- "02.05.2017" 
+loppkuup <- "20.05.2019"
+fond1 = 73 #LHV Indeks
+fond2 = 74 #Swed K99-00
+fond3 = 75 #SEB Indeks
+fond4 = 77 #Tuleva Maailma Aktsiad
+```
+
+
+```{r echo=FALSE}
+url1 = paste("https://www.pensionikeskus.ee/statistika/ii-sammas/kogumispensioni-fondide-nav/?date_from=", algkuup, "&date_to=", loppkuup, "&f%5B%5D=", fond1, "&f%5B%5D=", fond2, "&f%5B%5D=", fond3, "&f%5B%5D=", fond4,"&download=xls", sep="")
+nav1 = read.csv2(url1, fileEncoding ="UTF-16", header = TRUE, sep = "\t") %>%
+  select(-ISIN, -Muutus.., -Fond) %>%
+  mutate(Kuupäev=dmy(Kuupäev))
+
+```
+
+Kui palju siis indeksifondide tootlused kõiguvad? Tavaline osakuhinna graafik näeb välja selline:
+
+```{r echo=FALSE}
+nav1.p2evased.tootlused <- nav1 %>%
+    group_by(Lühinimi)
+
+nav1.p2evased.tootlused %>%
+    ggplot(aes(x = Kuupäev, y = NAV, color = Lühinimi)) +
+    geom_line(size = 1) +
+    labs(title = "Osakuhindade päevased muutused",
+         x = "", y = "Osaku hind", color = "") +
+    facet_wrap(~ Lühinimi, ncol = 2, scales = "free_y") +
+    scale_y_continuous(labels = scales::dollar) +
+    theme_tq() + 
+    scale_color_tq()
+```
+
+Ilma kogenud graafikulugeja-statistiku kogemuseta on siiski sellise joone pealt väga raske midagi välja lugeda fondi riskantsuse kohta. Vaatame korraks selle inimese pilguga, kes kord kuus oma pensionikontot vaatab.
+
+```{r echo=FALSE}
+nav1.kuised.tootlused <- nav1 %>%
+    group_by(Lühinimi) %>%
+    tq_transmute(select     = NAV, 
+                 mutate_fun = periodReturn, 
+                 period     = "monthly", 
+                 type       = "arithmetic")
+```
+
+
+```{r echo=FALSE}
+nav1.kuised.tootlused %>%
+    ggplot(aes(x = Kuupäev, y = monthly.returns, fill = Lühinimi)) +
+    geom_bar(stat = "identity") +
+    geom_hline(yintercept = 0, color = palette_light()[[1]]) +
+    scale_y_continuous(labels = scales::percent) +
+    labs(title = "Indeksifondide kuised tootlused",
+         subtitle = "Kõik pole riskantne mis kõigub!",
+         y = "Kuised tootlused", x = "") + 
+    facet_wrap(~ Lühinimi, ncol = 2) +
+    theme_tq() + 
+    scale_fill_tq()
+```
+
+
+```{r echo=FALSE}
+```
+
+Lisaks graafikutele võib statistika-pakettide abil ka igasuguseid numbreid välja arvutada. Pensionikeskus arvutab näiteks standardhälvet:
+
+```{r echo=FALSE}
+nav1.kuised.tootlused %>%
+  tq_performance(Ra = monthly.returns,
+                 performance_fun = sd)
+
+```
+
+Võib vaadata ka, kui palju maksimaalne langus on fondidel olnud (tipust põhja ehk drawdown)
+
+```{r echo=FALSE}
+nav1.kuised.tootlused %>%
+  tq_performance(Ra = monthly.returns,
+                 performance_fun = maxDrawdown)
+
+```
+
+Mõnikord soovitavad pankade müügimehed, et tasub oma riske hajutada ning jagada oma II samba vara mitme fondi vahel. Proovime, kas see aitab riski vähendada, kui jagame oma raha võrdselt 4 fondi vahel. Ei vähenda.
+
+```{r}
+wts <- c(0.25, 0.25, 0.25, 0.25)
+portfelli.kuised.tootlused <- nav1.kuised.tootlused %>%
+    tq_portfolio(assets_col  = Lühinimi, 
+                 returns_col = monthly.returns, 
+                 weights     = wts)
+
+portfelli.kuised.tootlused %>%
+  tq_performance(Ra = portfolio.returns,
+                 performance_fun = sd)
+
+portfelli.kuised.tootlused %>%
+  tq_performance(Ra = portfolio.returns,
+                 performance_fun = maxDrawdown)
+
+```
+
+Riski aitab vähendada ainult üks asi - tuleb osa portfellist panna riskivabadesse võlakirjadesse. Näiteks kui pool oma II samba varast Tuleva aktsiafondi indeksifondi ja pool Tuleva võlakirjafondi, on tulemus selline. Risk vähenes poole võrra.
+
+```{r echo=FALSE}
+fond5 = 76 #Tuleva Maailma Võlakirjad
+
+url2 = paste("https://www.pensionikeskus.ee/statistika/ii-sammas/kogumispensioni-fondide-nav/?date_from=", algkuup, "&date_to=", loppkuup, "&f%5B%5D=", fond4, "&f%5B%5D=", fond5, "&download=xls", sep="")
+nav2 = read.csv2(url2, fileEncoding ="UTF-16", header = TRUE, sep = "\t") %>%
+  select(-ISIN, -Muutus.., -Fond) %>%
+  mutate(Kuupäev=dmy(Kuupäev))
+
+nav2.kuised.tootlused <- nav2 %>%
+    group_by(Lühinimi) %>%
+    tq_transmute(select     = NAV, 
+                 mutate_fun = periodReturn, 
+                 period     = "monthly", 
+                 type       = "arithmetic")
+
+wts <- c(0.5, 0.5)
+portfell2.kuised.tootlused <- nav2.kuised.tootlused %>%
+    tq_portfolio(assets_col  = Lühinimi, 
+                 returns_col = monthly.returns, 
+                 weights     = wts)
+
+portfell2.kuised.tootlused %>%
+  tq_performance(Ra = portfolio.returns,
+                 performance_fun = sd)
+
+portfell2.kuised.tootlused %>%
+  tq_performance(Ra = portfolio.returns,
+                 performance_fun = maxDrawdown)
+```
+
+ Aga paraku teenib pool portfellist nüüd võlakirjade tootlust, ehk napilt üle 0% aastas ja sellega on koguportfelli tootlus ka langenud poole peale. Ei ole tootlust ilma riskita. (kood veel lisamata)
+```{r}
+
+
+
+```
+
+Mõni pensionifond väidab siiski, et nemad suudavad aktiivse juhtimisega riski vähendada nii, nagu investor seda ise ei suuda. Kuna eelpool nägime kuidas tootlusest loobudes saab igaüks riski lihtsalt vähendada, siis eeldan, et aktiivselt juhitavad pensionifondid püüavad riski vähendada nii, et tootlus ei lange. Vaatame nt Eesti suurima fondi Swedbank K3 riskitaset. Tundub, et üsna sarnane meie eelmises näites tehtud 50/50 portfellile:
+
+```{r echo=FALSE}
+fond6 = 37 #Swedbank K3
+
+url3 = paste("https://www.pensionikeskus.ee/statistika/ii-sammas/kogumispensioni-fondide-nav/?date_from=", algkuup, "&date_to=", loppkuup, "&f%5B%5D=", fond6, "&download=xls", sep="")
+nav3 = read.csv2(url3, fileEncoding ="UTF-16", header = TRUE, sep = "\t") %>%
+  select(-ISIN, -Muutus.., -Fond) %>%
+  mutate(Kuupäev=dmy(Kuupäev))
+
+nav3.kuised.tootlused <- nav3 %>%
+    #group_by(Lühinimi) %>%
+    tq_transmute(select     = NAV, 
+                 mutate_fun = periodReturn, 
+                 period     = "monthly", 
+                 type       = "arithmetic")
+
+nav3.kuised.tootlused %>%
+  tq_performance(Ra = monthly.returns,
+                 performance_fun = sd)
+
+nav3.kuised.tootlused %>%
+  tq_performance(Ra = monthly.returns,
+                 performance_fun = maxDrawdown)
+
+```
+
+Aga kas fondijuht saavutas ka parema tootluse tänu aktiivsele riskijuhtimisele? (kood lisamata)
+
+
+```{r fig.height=2.5, fig.width=5}
+
+
+nav3.kuised.tootlused %>%
+    ggplot(aes(x = Kuupäev, y = monthly.returns)) +
+    geom_bar(stat = "identity") +
+    geom_hline(yintercept = 0, color = palette_light()[[1]]) +
+    scale_y_continuous(labels = scales::percent) +
+    labs(title = "Aktiivse fondi kuised tootlused",
+         y = "Kuised tootlused", x = "") + 
+    #facet_wrap(~ Lühinimi, ncol = 2) +
+    theme_tq() + 
+    scale_fill_tq()
+```
+
+
+
+Tegin mingil põhjusel graafiku pensionifondide indeksi EPI jaoks ka. Võibolla on vaja..
+
+```{r echo=FALSE, fig.height=2.3, fig.width=4}
+url2 = paste("https://www.pensionikeskus.ee/statistika/ii-sammas/epi-graafikud/?date_from=", algkuup, "&date_to=", loppkuup,"&download=xls", sep="")
+
+EPI.indeks = read.csv2(url2, fileEncoding ="UTF-16", header = TRUE, sep = "\t") %>%
+  filter(Indeks=="EPI") %>%
+    mutate(Kuupäev=dmy(Kuupäev))
+
+EPI.indeks %>%
+    ggplot(aes(x = Kuupäev, y = Väärtus)) +
+    geom_line(size = 1, colour="red") +
+  labs(title = "EPI Indeksi muutus",
+         x = "", y = "Indeksi väärtus") +
+       scale_y_continuous(labels = scales::dollar) +
+    theme_tq() + 
+    scale_color_tq()
+```
+
+Siia lõppu võiks veel ühele graafikule kõik kokku panna.
+
