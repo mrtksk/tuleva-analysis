@@ -1,0 +1,276 @@
+---
+output: html_notebook
+params:
+  date_start: '2016-01-01'
+  date_end: '2019-01-01'
+  portfolio_global: 'port1'
+  funds_est: !r c(78, 73, 47, 39)
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r packages, message=FALSE, warning=FALSE, include=FALSE}
+library(tidyquant)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+
+```{r scripts, parameters and data from project}
+#Global (scripts, data)
+ls_portfolios <- readRDS(file = "./data/portfolios.rds")
+vec_scripts <- list.files("./R", pattern = "[.][rR]$", full.names = TRUE)
+invisible(lapply(vec_scripts, source))
+#Data:
+codes_est <- read_csv("./data/codes_funds_est.csv")
+
+#Params:
+date_start <- params$date_start
+date_end <- params$date_end
+portfolio_compare <- ls_portfolios[params$portfolio_global][[1]]  #need to write function to errorhandle this!
+codes <- params$funds_est
+```
+
+# Kuidas võrdlusindeksil läks?
+
+```{r comparison portfolio returns, message=FALSE, warning=FALSE, include=FALSE}
+usdeur = tq_get(x = "DEXUSEU", get = "economic.data", from = date_start, to = date_end)
+
+prices_comparison = portfolio_compare %>%
+  tq_get(get = "stock.prices", from = date_start, to = date_end)
+
+returns_comparison = left_join(prices_comparison, usdeur, by = "date")%>%
+  mutate(price_eur = adjusted/price) %>%
+  group_by(stocks)%>%
+  tq_transmute(select = price_eur, 
+               mutate_fun = periodReturn, 
+               period     = "monthly", 
+               type       = "arithmetic",
+               col_rename = "stocks.monthly.returns")%>%
+  tq_portfolio(assets_col  = stocks,
+               returns_col = stocks.monthly.returns, 
+               weights     = portfolio_compare$wts,
+               col_rename  = "portfolio.returns") %>% 
+  rename(kuup = date) %>% 
+  #Format date for later joining:
+  mutate(kuup = as.yearmon(kuup))
+```
+
+Võrdlusindeksi kompositsioon:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+for (i in 1:nrow(portfolio_compare)){
+  cat(portfolio_compare$stocks[i], ": ", paste0(portfolio_compare$wts[i] * 100, "%\n"), sep = "")
+}
+```
+
+
+Uuritava perioodi on võrdlusindeksi tootlus olnud  
+`r format((Return.annualized(returns_comparison$portfolio.returns, scale = 12)*100), digits =2)` protsenti aastas.
+
+
+# Eesti pensioniindeksi tootlikkus
+
+```{r prep EPI data, message=FALSE, warning=FALSE, include=FALSE}
+url_epi <- url_epi_est(date_start = date_start, date_end = date_end, nav = T)
+d_b_epi <- download_funds_est(url_epi)
+d_b_epi %>% 
+  mutate(kuup = dmy(Kuupäev)) %>%
+  select(-Kuupäev) %>% 
+  spread(key = Indeks, value=Väärtus) %>% 
+  arrange(kuup)-> d_epi_wide
+```
+
+```{r get EPI returns for period, message=FALSE, warning=FALSE, include=FALSE}
+d_epi_wide %>% 
+  tq_mutate(select = "EPI", mutate_fun = periodReturn, period = 'daily', type = 'arithmetic', col_rename = "daily_epi_general") %>%
+  tq_mutate(select = "EPI-00", mutate_fun = periodReturn, period = 'daily', type = 'arithmetic', col_rename = "daily_epi_00") %>%
+  tq_mutate(select = "EPI-25", mutate_fun = periodReturn, period = 'daily', type = 'arithmetic', col_rename = "daily_epi_25") %>% 
+  tq_mutate(select = "EPI-50", mutate_fun = periodReturn, period = 'daily', type = 'arithmetic', col_rename = "daily_epi_50") %>%
+  tq_mutate(select = "EPI-75", mutate_fun = periodReturn, period = 'daily', type = 'arithmetic', col_rename = "daily_epi_75") -> d_epi_returns_daily
+
+returns_epi_annualized <- lapply(d_epi_returns_daily[7:11], function(x) Return.annualized(x, scale = 365)*100)
+```
+
+EPI indeksi keskmine aastatootlus uuritaval perioodil on olnud `r format(returns_epi_annualized$daily_epi_general, digits = 2)` protsenti.
+
+# Rahaline mõju
+
+Mis oleks juhutunud, kui kogu pensioniraha oleks suunatud võrdlusportfelli?
+
+```{r get epi funds amount, echo=FALSE, message=FALSE, warning=FALSE}
+url_epi_volume <- url_epi_est(date_start = date_start, date_end = date_end, nav = F)
+d_b_epi_volume <- download_funds_est(url_epi_volume)
+d_b_epi_volume %>% 
+  mutate(kuup = dmy(Kuupäev)) %>% 
+  left_join(d_epi_returns_daily, by = "kuup") %>% 
+  #Calculate inflow (volume - previous volume - growth):
+  mutate(inflow = Maht - lag(Maht, n=1) - lag(Maht, n=1)*daily_epi_general,
+         inflow = ifelse(kuup == date_start, Maht, inflow)) %>% 
+  filter(!is.na(inflow)) %>% 
+  mutate(total = cumsum(inflow)) -> d_epi_inflow
+
+epi_inflow_monthly <- d_epi_inflow %>% 
+    tq_transmute(select = inflow,
+                 mutate_fun = apply.monthly,
+                 FUN = sum) %>% 
+  mutate(kuup = as.yearmon(kuup))
+```
+
+Meie pensionifondides oli perioodi alguses `r format(d_epi_inflow$Maht[1]/1000000000, digits =3, big.mark = " ")` miljardit eurot. Perioodi jooksul investeerisime sinna juurde `r format((sum(d_epi_inflow$inflow)-d_epi_inflow$Maht[1])/1000000000, digits =3, big.mark = " ")` miljardit eurot juurde ja koos tootlusega oli meil perioodi lõpuks raha `r format(tail(d_epi_inflow$Maht, n=1)/1000000000, digits =3, big.mark = " ")` miljardit eurot.
+
+Investeerime meie rahavood võrldusindeksisse. Mudel eeldab, et antud kuu rahavoog (inflow) investeeritakse kuu lõpus, s.t ta hakkab tootlust teenima järgmisel kuul.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#Combine Estonian Pension Funds' inflows and comparison index's returns:
+dummy_invest_monthly <- left_join(returns_comparison, epi_inflow_monthly, by = "kuup")
+#And calculate theoretical returns if Estonian funds had been invested in comparison index:
+dummy_invest_monthly$newvolume <- dummy_invest_monthly$inflow
+for(i in c(2:length(dummy_invest_monthly$kuup))){
+  dummy_invest_monthly$newvolume[i] = dummy_invest_monthly$newvolume[i-1]*(1+dummy_invest_monthly$portfolio.returns[i]) + dummy_invest_monthly$newvolume[i]
+}
+
+#How would have the comparison index performed?
+result <- tail(dummy_invest_monthly$newvolume,1)-tail(d_epi_inflow$Maht, n=1)
+if (result > 0){
+  lab_result <- 'rohkem'
+} else {
+  lab_result <- 'vähem'
+}
+```
+
+Uuritaval perioodil oleks võrdlusportfell `r format(tail(dummy_invest_monthly$newvolume,1)/1000000000, digits = 3)` kasvaud miljardi euro suuruseks. Seega meie pensionifondid oleksid uuritaval perioodil võrdlusindeksis teeninud **`r format(result/1000000, digits = 2)` miljonit eurot `r lab_result`.**
+
+Graafik ka:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Combine daily EPI data and monthly dummy portfolio 
+d_epi_inflow$kuup_monthly <- as.yearmon(d_epi_inflow$kuup) 
+epi_dummyportf_koos = left_join(d_epi_inflow, dummy_invest_monthly, by= c("kuup_monthly" = "kuup"))
+
+epi_dummyportf_koos %>%
+  ggplot(aes(x=kuup_monthly, y=Maht))+
+  geom_line()+
+  geom_line(aes(x=kuup_monthly, y=newvolume), color = "red")+
+  labs(title = "EPI ja maailmaturud",
+       subtitle = "Kuidas meie raha on kasvanud meie pensionifondides ja maailmaturul",
+       x = "", 
+       y = "Pensionifondide koguväärtus") +
+  theme_tuleva() +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "EUR"))
+
+```
+
+<br>
+
+# Kuidas üksikutel pensionifondidel on läinud?
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#Download data:
+dat_funds_est <- download_funds_est(url_funds_est(date_start, date_end, codes))
+dat_funds_est %>% 
+  mutate(kuup = dmy(Kuupäev)) -> dat_funds_est
+
+
+#Calculate main indicators:
+returns_funds_monthly <- dat_funds_est %>% 
+  group_by(Fond) %>% 
+  tq_transmute(select     = NAV, 
+               mutate_fun = periodReturn, 
+               period     = "monthly", 
+               type       = "arithmetic",
+               col_rename = "returns_monthly") %>% 
+  ungroup()
+#Annualized returns:
+returns_funds_monthly %>% 
+  group_by(Fond) %>% 
+  summarise(`aastane tootlus` = Return.annualized(returns_monthly, scale = 12)) %>% 
+  ungroup() %>% 
+  arrange(desc(`aastane tootlus`)) -> returns_funds_ann
+```
+
+Fondide tootlused uuritaval perioodil on olnud järgmised:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+for (i in 1:nrow(returns_funds_ann)){
+  cat(returns_funds_ann$Fond[i], ": ", paste0(round(returns_funds_ann$`aastane tootlus`[i]*100, 2), "%\n"))
+}
+
+```
+ 
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#Või sama asi data.table abil:
+library(DT)
+datatable(returns_funds_ann) %>% 
+  formatPercentage(columns = c("aastane tootlus"), digits = 2)
+```
+
+Kõrvutame Eesti pensionifonde meie võrdlusindeksiga.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+returns_funds_monthly %>% 
+  mutate(kuup_join = as.yearmon(kuup)) %>% 
+  left_join(epi_inflow_monthly, by = c("kuup_join" = "kuup")) -> d_tmp
+
+d_results_funds <- data_frame()
+for (fund in unique(d_tmp$Fond)){
+  print(fund)
+  d_tmp %>% 
+    filter(Fond == fund) %>% 
+    arrange(kuup) -> d_fund
+  #Create "total" column that is equal to the total value of assets in Estonian pension funds at that point of time (end of respective month)
+  mindate <- min(d_fund$kuup_join)
+  d_fund$total <- tail(d_epi_inflow$total[d_epi_inflow$kuup_monthly == mindate], n = 1)
+  
+  for (i in c(2:length(d_fund$kuup))){
+    d_fund$total[i] <- d_fund$total[i-1]*(1+d_fund$returns_monthly[i]) + d_fund$inflow[i]
+  }
+  d_results_funds <- bind_rows(d_results_funds, d_fund)  
+}
+#Add yearmon date:
+d_results_funds$kuup_join <- as.yearmon(d_results_funds$kuup)
+```
+
+Kui võrdlusindeks kasvas perioodil `r format(tail(dummy_invest_monthly$newvolume,1)/1000000000, digits = 3)` mld euroni, siis Eesti fondide tulemused olnuks järgmised:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+d_results_funds %>% 
+  filter(kuup == max(kuup)) %>% 
+  select(Fond, total) %>% 
+  datatable() %>% 
+  formatCurrency("total", currency = "€", before = F, mark = " ")
+```
+
+Ja tulemused graafiliselt:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+epi_dummyportf_koos %>% 
+  select(kuup, newvolume) %>% 
+  mutate(kuup = ceiling_date(kuup, unit = "month") - ddays(1)) %>% 
+  unique() %>% 
+  mutate(Fond = "Võrdlusfondi väärtus") -> d_graph_compare
+d_results_funds %>% 
+  select(kuup, total, Fond) %>% 
+  mutate(kuup = ceiling_date(kuup, unit = "month") - ddays(1)) %>% 
+  rename(newvolume = total) %>% 
+  bind_rows(d_graph_compare) %>% 
+  ggplot()+
+  geom_line(aes(x = kuup, y = newvolume, color = Fond), size = 1)+
+  labs(title = "Pensionifondid ja maailmaturud",
+       subtitle = "Kuidas meie raha on kasvanud meie pensionifondides ja maailmaturul",
+       x = "", y = "Pensionifondide koguväärtus") +
+  theme_tuleva()+
+  scale_y_continuous(labels = scales::dollar_format(prefix = "EUR"))+
+  scale_color_brewer(palette = "Dark2")+
+  theme(legend.position = "bottom")+
+  guides(color = guide_legend(ncol = 3))
+  
+```
+
