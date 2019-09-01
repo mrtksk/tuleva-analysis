@@ -1,5 +1,5 @@
 ---
-title: "Pensionifondide tootluse analüüs"
+title: "Pensionifondide tootluse anal??s"
 author: "tpekk"
 date: "October 1, 2017"
 output: html_document
@@ -13,9 +13,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-Pärast kahte päeva intensiivset õpet Indrek Seppo juhendamisel alustan ma oma uusaasta lubaduse täideviimist: enam Excelis analüüse ei tee. Sissejuhatuseks teen uuesti läbi nüüd juba pea kaks aastat tagasi tehtud võrdluse Eesti pensionifondide ja maailmaturu keskmise vahel.
+P?rast kahte p?eva intensiivset ?pet Indrek Seppo juhendamisel alustan ma oma uusaasta lubaduse t?ideviimist: enam Excelis anal??se ei tee. Sissejuhatuseks teen uuesti l?bi n??d juba pea kaks aastat tagasi tehtud v?rdluse Eesti pensionifondide ja maailmaturu keskmise vahel.
 
-Analüüs on kirjutatud R Markdown dokumendina ning arvutused on tehtud tidyquant package'i abil.
+Anal??s on kirjutatud R Markdown dokumendina ning arvutused on tehtud tidyquant package'i abil.
 
 ```{r warning=FALSE}
 library(rmarkdown)
@@ -24,11 +24,11 @@ library(tidyquant)
 
 ```
 
-Tidyquant kasutab Yahoo Finance'i andmeid, mis on tasuta kättesaadavad. Enamik indekseid ei ole, küll aga on piisav valik ETF-e. See ongi ausam - nii on meie võrldusindeks tegelikult kättesaadav etalon. Piisavalt suurele investorile nagu pensionifond peaks ETFi ostmine ja hoidmine olema sisuliselt 0 kuluga.
+Tidyquant kasutab Yahoo Finance'i andmeid, mis on tasuta k?ttesaadavad. Enamik indekseid ei ole, k?ll aga on piisav valik ETF-e. See ongi ausam - nii on meie v?rldusindeks tegelikult k?ttesaadav etalon. Piisavalt suurele investorile nagu pensionifond peaks ETFi ostmine ja hoidmine olema sisuliselt 0 kuluga.
 
-Minu võrldusindeks koosneb kolmest iShares ETF-ist: "ACWI"" jäljendab nagu nimigi ütleb, maailma aktsiaturu indeksit MSCI ACWI, "IGOV" jäljendab maailma valitsuste võlakirju v.a. USA omi ja "AGG" jäljendab kogu USA investeerimisjärgu võlakirjaturgu. Need kaks võlakirja ETF-i katavad ära ligi 80% investeerimisjärgu võlakirjadest maailmas.
+Minu v?rldusindeks koosneb kolmest iShares ETF-ist: "ACWI"" j?ljendab nagu nimigi ?tleb, maailma aktsiaturu indeksit MSCI ACWI, "IGOV" j?ljendab maailma valitsuste v?lakirju v.a. USA omi ja "AGG" j?ljendab kogu USA investeerimisj?rgu v?lakirjaturgu. Need kaks v?lakirja ETF-i katavad ?ra ligi 80% investeerimisj?rgu v?lakirjadest maailmas.
 
-Ja alguse kuupäevaks võtan 2009 aasta teise poolaasta, kui tekkis võimalus agressiivse strateegiaga fonde luua. 01.07.2009 alustasid tegevust ka Nordea (Luminori) fondid, seega on meil võimalus võrrelda kõigi Eestis kuni Tuleva tulekuni tegutsenud ja täna siiani tegutsevate pensionifondidega.
+Ja alguse kuup?evaks v?tan 2009 aasta teise poolaasta, kui tekkis v?imalus agressiivse strateegiaga fonde luua. 01.07.2009 alustasid tegevust ka Nordea (Luminori) fondid, seega on meil v?imalus v?rrelda k?igi Eestis kuni Tuleva tulekuni tegutsenud ja t?na siiani tegutsevate pensionifondidega.
 
 ```{r algandmed, echo=TRUE, message=FALSE, warning=FALSE}
 startdate = ymd(090701)
@@ -39,9 +39,9 @@ Portfolio  = tibble(stocks = c("ACWI","IGOV", "AGG"),
 ```
 
 ## Maailmaturu ja Eesti pensionifondide tootlused
-Esmalt siis tõmban alla hinnad ja arvutan välja kuised tootlused. Portfell eeldab ka rebalansseerimist korra kuus - see tundub olema meie pensionifondide tegeliku praktikaga ka kooskõlas kuna uued laekumised jõuavad fondideni suhteliselt piiratud päevade jooksul korra kuus.
+Esmalt siis t?mban alla hinnad ja arvutan v?lja kuised tootlused. Portfell eeldab ka rebalansseerimist korra kuus - see tundub olema meie pensionifondide tegeliku praktikaga ka koosk?las kuna uued laekumised j?uavad fondideni suhteliselt piiratud p?evade jooksul korra kuus.
 
-```{r võrldlusindeksi tootlused, echo=TRUE, message=FALSE, warning=FALSE}
+```{r v?rldlusindeksi tootlused, echo=TRUE, message=FALSE, warning=FALSE}
 
 usdeur = tq_get(x = "DEXUSEU", get = "economic.data", from = startdate, to = enddate)
 
@@ -65,20 +65,20 @@ Portfolio.returns$date = as.yearmon(Portfolio.returns$date)
 
 ```
 
-Maailmaturu võrdlusindeksi keskmine aastatootlus on analüüsiperioodil olnud `r format((Return.annualized(Portfolio.returns$portfolio.returns, scale = 12)*100), digits =2)` protsenti.
+Maailmaturu v?rdlusindeksi keskmine aastatootlus on anal??siperioodil olnud `r format((Return.annualized(Portfolio.returns$portfolio.returns, scale = 12)*100), digits =2)` protsenti.
 
-Eesti andmeid Tidyquant'i abil kätte ei saa, kasutame otse csv faili allalaadimist. 
+Eesti andmeid Tidyquant'i abil k?tte ei saa, kasutame otse csv faili allalaadimist. 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
 EPI = read.csv2("http://www.pensionikeskus.ee/statistika/ii-sammas/epi-graafikud/?date_from=01.07.2009&date_to=01.10.2017&download=xls", fileEncoding = "UTF-16LE", sep = "\t")
-EPI$Kuupäev = dmy(EPI$Kuupäev)
-EPI = spread(EPI, key = Indeks, value=Väärtus)
+EPI$KuupÃ¤ev = dmy(EPI$KuupÃ¤ev)
+EPI = spread(EPI, key = Indeks, value=VÃ¤Ã¤rtus)
 
 ```
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-arrange(EPI, Kuupäev)
+arrange(EPI, KuupÃ¤ev)
 ```
 
 Leiame siis ka tootlused EPI indeksile.
@@ -93,25 +93,26 @@ epireturns = EPI %>%
 
 ```
 
-EPI indeksi keskmine aastatootlus analüüsiperioodil on olnud `r format((Return.annualized(epireturns$epi.daily.returns, scale = 365)*100), digits =2)` protsenti.
+EPI indeksi keskmine aastatootlus anal??siperioodil on olnud `r format((Return.annualized(epireturns$epi.daily.returns, scale = 365)*100), digits =2)` protsenti.
 
 ## Let's talk about money
-Kuidas see erinevus aastatootluses on mõjutanud meie pensionivara väärtust? Tõmban alla pensionifondide kogumahu andmed ning leian sealt igakuised rahavood.
+Kuidas see erinevus aastatootluses on m?jutanud meie pensionivara v??rtust? T?mban alla pensionifondide kogumahu andmed ning leian sealt igakuised rahavood.
 
 ```{r epi data, echo=TRUE, message=FALSE, warning=FALSE}
 
-EPIvolume = read.csv2("http://www.pensionikeskus.ee/statistika/ii-sammas/kogumispensioni-fondide-maht/?date_from=01.07.2009&date_to=01.10.2017&f%5B%5D=-1&download=xls", fileEncoding = "UTF-16LE", sep = "\t")
-EPIvolume$Kuupäev = dmy(EPIvolume$Kuupäev)
 
-EPIcashflows = left_join(EPIvolume, epireturns, by = "Kuupäev") %>%
+EPIvolume = read.csv2("http://www.pensionikeskus.ee/statistika/ii-sammas/kogumispensioni-fondide-maht/?date_from=01.07.2009&date_to=01.10.2017&f%5B%5D=-1&download=xls", fileEncoding = "UTF-16LE", sep = "\t")
+EPIvolume$KuupÃ¤ev = dmy(EPIvolume$KuupÃ¤ev)
+
+EPIcashflows = left_join(EPIvolume, epireturns, by = "KuupÃ¤ev") %>%
   mutate(inflow = Maht - lag(Maht, n=1) - lag(Maht, n=1)*epi.daily.returns)
 
 EPIcashflows$inflow[1] = EPIcashflows$Maht[1]
 
 EPIinflow = EPIcashflows %>%
-  select(Kuupäev, inflow, Maht)%>%
+  select(KuupÃ¤ev, inflow, Maht)%>%
   filter(!is.na(inflow))%>%
-  rename(date="Kuupäev")
+  rename(date="KuupÃ¤ev")
   
 EPI.monthly.inflow = EPIinflow %>%
   tq_transmute(select = inflow,
@@ -122,11 +123,11 @@ EPIinflow$date = as.yearmon(EPIinflow$date)
 
 ```
 
-Meie pensionifondides oli perioodi alguses `r format(EPIcashflows$Maht[1]/1000000, digits =3)` miljonit eurot. Perioodi jooksul investeerisime sinna juurde `r format((sum(EPI.monthly.inflow$inflow)-EPIcashflows$Maht[1])/1000000000, digits =3)` miljardit eurot juurde ja koos tootlusega oli meil perioodi lõpuks raha `r format(tail(EPIcashflows$Maht, n=1)/1000000000, digits =3)` miljardit eurot.
+Meie pensionifondides oli perioodi alguses `r format(EPIcashflows$Maht[1]/1000000, digits =3)` miljonit eurot. Perioodi jooksul investeerisime sinna juurde `r format((sum(EPI.monthly.inflow$inflow)-EPIcashflows$Maht[1])/1000000000, digits =3)` miljardit eurot juurde ja koos tootlusega oli meil perioodi l?puks raha `r format(tail(EPIcashflows$Maht, n=1)/1000000000, digits =3)` miljardit eurot.
 
-## Võrdleme maailmaturuga
+## V?rdleme maailmaturuga
 
-Investeerime nüüd meie rahavood võrldusindeksisse. Mudel eeldab, et antud kuu rahavoog (inflow) investeeritakse kuu lõpus, s.t ta hakkab tootlust teenima järgmisel kuul.
+Investeerime n??d meie rahavood v?rldusindeksisse. Mudel eeldab, et antud kuu rahavoog (inflow) investeeritakse kuu l?pus, s.t ta hakkab tootlust teenima j?rgmisel kuul.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -139,7 +140,7 @@ for(i in c(2:length(Portfolio.value$date))){
 
 ```
 
-Võrdlusportfell kasvas 7 aastaga `r format(tail(Portfolio.value$uus,1)/1000000000, digits = 3)` miljardi euro suuruseks. Seega jäid meie pensionifondid selle perioodiga maailmaturule alla `r format((tail(Portfolio.value$uus,1)-tail(EPIcashflows$Maht, n=1))/1000000, digits = 2)` miljoni euroga. 
+V?rdlusportfell kasvas 7 aastaga `r format(tail(Portfolio.value$uus,1)/1000000000, digits = 3)` miljardi euro suuruseks. Seega j?id meie pensionifondid selle perioodiga maailmaturule alla `r format((tail(Portfolio.value$uus,1)-tail(EPIcashflows$Maht, n=1))/1000000, digits = 2)` miljoni euroga. 
 
 Ja tulemus graafiku kujul
 
@@ -153,33 +154,33 @@ kokkuvote %>%
   geom_line(aes(x=date, y=uus), color = "red")+
    labs(title = "EPI ja maailmaturud",
          subtitle = "Kuidas meie raha on kasvanud meie pensionifondides ja maailmaturul",
-         x = "", y = "Pensionifondide koguväärtus") +
+         x = "", y = "Pensionifondide koguv??rtus") +
     theme_tq() +
     scale_y_continuous(labels = scales::dollar_format(prefix = "EUR"))
 
 ```
 
 ##Ja iga pensionifond eraldi
-Nüüd võib ju iga fondijuht öelda, et jah, teistes fondides ongi asi kehv. Minu fondis poleks sa maailmaturule alla jäänud. Vaatme, mis juhtub, kui kogu pensioniraha oleks ühte pensionifondi investeeritud. Näiteks mõnda progressiivse strateegia fondi.
+N??d v?ib ju iga fondijuht ?elda, et jah, teistes fondides ongi asi kehv. Minu fondis poleks sa maailmaturule alla j??nud. Vaatme, mis juhtub, kui kogu pensioniraha oleks ?hte pensionifondi investeeritud. N?iteks m?nda progressiivse strateegia fondi.
 
-Tõmbame 4 suurema progressiivse strateegia fondi NAVid alla ja arvutame kuised tootlused.
+T?mbame 4 suurema progressiivse strateegia fondi NAVid alla ja arvutame kuised tootlused.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 Eesti.fondid = read.csv2("http://www.pensionikeskus.ee/statistika/ii-sammas/kogumispensioni-fondide-nav/?date_from=01.07.2009&date_to=01.10.2017&f%5B%5D=47&f%5B%5D=48&f%5B%5D=61&f%5B%5D=37&download=xls", fileEncoding = "UTF-16LE", sep = "\t")
 
-Eesti.fondid$Kuupäev = dmy(Eesti.fondid$Kuupäev)
+Eesti.fondid$Kuup?ev = dmy(Eesti.fondid$Kuup?ev)
 
 fondide.tootlused = Eesti.fondid %>%
-  group_by(Lühinimi)%>%
+  group_by(L?hinimi)%>%
   tq_transmute(select     = NAV, 
                  mutate_fun = periodReturn, 
                  period     = "monthly", 
                  type       = "arithmetic",
                  col_rename = "fund.monthly.returns")%>%
-  spread(key = Lühinimi, value = fund.monthly.returns)
-fondide.tootlused$Kuupäev = as.yearmon(fondide.tootlused$Kuupäev)
+  spread(key = L?hinimi, value = fund.monthly.returns)
+fondide.tootlused$Kuup?ev = as.yearmon(fondide.tootlused$Kuup?ev)
 
-#tegelikult võinuks siin vist kasutada summarize funktsiooni
+#tegelikult v?inuks siin vist kasutada summarize funktsiooni
 LLK50 = Return.annualized(fondide.tootlused$LLK50, scale = 12)*100
 NPK50 = Return.annualized(fondide.tootlused$NPK50, scale = 12)*100
 SEK50 = Return.annualized(fondide.tootlused$SEK50, scale = 12)*100
@@ -187,16 +188,16 @@ SWK50 = Return.annualized(fondide.tootlused$SWK50, scale = 12)*100
 
 ```
 
-Analüüsiperioodil on keskmine aastatootlus meie progressiivsetes pensionifondides olnud järgmine:  
+Anal??siperioodil on keskmine aastatootlus meie progressiivsetes pensionifondides olnud j?rgmine:  
 * Swedbank K3 `r format(SWK50, digits = 2)` protsenti  
 * Nordea A `r format(NPK50, digits =2)` protsenti  
 * LHV L `r format(LLK50, digits =2)` protsenti  
 * SEB Progressiivne `r format(SEK50, digits =2)` protsenti
 
-Ja paneme nüüd pensioniraha kõik sinna sisse ka
+Ja paneme n??d pensioniraha k?ik sinna sisse ka
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-fondide.portfell = inner_join(EPI.monthly.inflow, fondide.tootlused, by= c("date" = "Kuupäev"))
+fondide.portfell = inner_join(EPI.monthly.inflow, fondide.tootlused, by= c("date" = "Kuup?ev"))
 
 fondide.portfell$LHV = fondide.portfell$inflow
 fondide.portfell$Nordea = fondide.portfell$inflow
@@ -219,13 +220,13 @@ d = format(tail(fondide.portfell$Swedbank, 1)/1000000000, digits = 3)
 
 ```
 
-Ühesõnaga, kui võrdlusportfellis kasvas raha 7 aastaga `r format(tail(Portfolio.value$uus,1)/1000000000, digits = 2)` miljardi euroni siis Kui kogu meie pensionifondide raha oleks investeeritud...  
-* LHV L fondi, oleks selle väärtus kasvanud `r a` miljardi euroni  
-* Nordea A-sse, oleks selle väärtus kasvanud `r b` miljardi euroni  
-* SEB Progressiivsesse, oleks selle väärtus kasvanud `r c` miljardi euroni  
-* Swedbank K3-e, oleks selle väärtus kasvanud `r d` miljardi euroni
+?hes?naga, kui v?rdlusportfellis kasvas raha 7 aastaga `r format(tail(Portfolio.value$uus,1)/1000000000, digits = 2)` miljardi euroni siis Kui kogu meie pensionifondide raha oleks investeeritud...  
+* LHV L fondi, oleks selle v??rtus kasvanud `r a` miljardi euroni  
+* Nordea A-sse, oleks selle v??rtus kasvanud `r b` miljardi euroni  
+* SEB Progressiivsesse, oleks selle v??rtus kasvanud `r c` miljardi euroni  
+* Swedbank K3-e, oleks selle v??rtus kasvanud `r d` miljardi euroni
 
-Üks kokkuvõttev graafika ka  
+?ks kokkuv?ttev graafika ka  
 
 ```{r}
 koik.koos = left_join(Portfolio.value, fondide.portfell, by= "date")
@@ -239,7 +240,7 @@ koik.koos %>%
   geom_line(aes(x=date, y=uus), color = "red")+
    labs(title = "Pensionifondid ja maailmaturud",
          subtitle = "Kuidas meie raha on kasvanud meie pensionifondides ja maailmaturul",
-         x = "", y = "Pensionifondide koguväärtus") +
+         x = "", y = "Pensionifondide koguv??rtus") +
     theme_tq() +
     scale_y_continuous(labels = scales::dollar_format(prefix = "EUR"))
 
@@ -247,7 +248,7 @@ koik.koos %>%
 ```
 
 
-Esialgu läks natuke kauem aega kui plaanisin. Järgmise sammuna püüan selle dokumendi Githubi üles saada ja siis palun abi selle täiendamisel.
+Esialgu l?ks natuke kauem aega kui plaanisin. J?rgmise sammuna p??an selle dokumendi Githubi ?les saada ja siis palun abi selle t?iendamisel.
 
 
 

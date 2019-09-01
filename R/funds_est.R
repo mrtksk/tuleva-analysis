@@ -113,11 +113,12 @@ url_funds_est <- function(date_start, date_end, vec_codes){
 #   res_index_est <- download_funds_est(url)
 # }
 
+
 # Download data -----------------------------------------------------------
 
 download_funds_est <- function(url){
   
-  d_b <- read.csv2(url, fileEncoding = "UTF-16LE", sep = "\t") 
+  d_b <- read.csv2(url, fileEncoding = "UTF-16LE", sep = "\t", stringsAsFactors = F) 
   if (nrow(d_b) == 0){
     stop(paste0('Something went wrong with the query: ', url))
   }
