@@ -5,14 +5,10 @@ prep_nav_epi <- function(x, per = "daily", method = 'arithmetic') {
     mutate(kuup = dmy(Kuupäev)) %>%
     select(-Kuupäev) %>% 
     spread(key = Indeks, value=Väärtus) %>% 
-    arrange(kuup) %>% 
-    #Asendame puuduvad väärtused (nt 2009-08-09 ja 2009-08-31) eelmise väärtusega
-    mutate(EPI = ifelse(is.na(EPI), lag(EPI, n = 1), EPI), 
-           `EPI-00` = ifelse(is.na(`EPI-00`), lag(`EPI-00`, n = 1), `EPI-00`),
-           `EPI-25` = ifelse(is.na(`EPI-25`), lag(`EPI-25`, n = 1), `EPI-25`),
-           `EPI-50` = ifelse(is.na(`EPI-50`), lag(`EPI-50`, n = 1), `EPI-50`),
-           `EPI-75` = ifelse(is.na(`EPI-75`), lag(`EPI-75`, n = 1), `EPI-75`)) -> x_wide
-  
+    arrange(kuup) %>%
+    #Puhtalt EPI põhine lähenemine:
+    filter(!is.na(EPI)) -> x_wide
+    
   x_wide %>% 
     tq_mutate(select = "EPI", mutate_fun = periodReturn, period = per, type = method, col_rename = "daily_epi_general") %>%
     tq_mutate(select = "EPI-00", mutate_fun = periodReturn, period = per, type = method, col_rename = "daily_epi_00") %>%

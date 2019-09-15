@@ -18,7 +18,7 @@ dummyportfolio_estfunds_epi <- function(dat_funds, dat_epi, field_join = "kuup",
                                         field_inflow = "inflow", field_total = "total", field_returns = "returns_monthly"){
   #Join data:
   dat_funds %>% 
-    left_join(dat_epi, by = field_join) %>% 
+    inner_join(dat_epi, by = field_join) %>% 
     group_by(Fond) %>% 
     #Get starting amounts for all funds from respective EPI funds (match starting dates):
     mutate(total = tail(d_epi_inflow_daily$total[d_epi_inflow_daily$kuup_monthly == min(kuup)], n = 1)) %>% 
